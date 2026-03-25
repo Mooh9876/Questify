@@ -1,89 +1,318 @@
 # Questify
 
-Questify ist jetzt als Full-Stack-Projekt aufgebaut:
+Questify ist eine Full-Stack-Webanwendung, die alltägliche Aufgaben in kleine motivierende Quests verwandelt. Nutzerinnen und Nutzer koennen Aufgaben erstellen, abschliessen, XP sammeln und ihren Fortschritt ueber ein Level-System verfolgen. Zusaetzlich unterstuetzt eine einfache KI-Logik beim Formulieren von Aufgaben, beim Vorschlagen neuer Quests und bei der Einschaetzung passender XP.
 
-- Frontend: React + TypeScript + Vite
-- Backend: Python + FastAPI
-- Datenbank: PostgreSQL
+## Ueberblick
+
+Die Anwendung besteht aus drei zentralen Teilen:
+
+- Frontend mit React, TypeScript und Vite
+- Backend mit FastAPI und Python
+- PostgreSQL-Datenbank zur Speicherung der Aufgaben
+
+Questify verbindet Produktivitaet mit einem spielerischen Ansatz. Statt einer klassischen To-do-Liste entsteht ein kleines Fortschrittssystem mit XP, Levels und motivierenden Rueckmeldungen.
+
+## Features
+
+- Aufgaben als Quests anlegen
+- Aufgaben als erledigt markieren
+- XP fuer abgeschlossene Aufgaben sammeln
+- Level-Fortschritt live im Dashboard sehen
+- KI-gestuetzte Aufgabenvorschlaege nach Kategorien
+- Aufgabenformulierung verbessern lassen
+- XP-Vorschlaege fuer neue Aufgaben erhalten
+- Motivierende Rueckmeldungen nach abgeschlossenen Quests
+- Persistente Speicherung in PostgreSQL
+- Start ueber lokale Entwicklung oder Docker
+
+## Verwendete Technologien
+
+### Frontend
+
+- React
+- TypeScript
+- Vite
+- CSS
+
+### Backend
+
+- Python
+- FastAPI
+- SQLAlchemy
+
+### Datenbank
+
+- PostgreSQL
+
+### Container / Deployment
+
+- Docker
+- Docker Compose
+- Nginx
+
+## Projektidee
+
+Viele Aufgabenlisten fuehlen sich schnell trocken und unmotivierend an. Questify verfolgt deshalb einen spielerischen Ansatz: Kleine Alltagsaufgaben werden als Quests dargestellt, jede erledigte Aufgabe bringt Erfahrungspunkte und der Gesamtfortschritt wird sichtbar. So entsteht ein motivierenderes Nutzungserlebnis, das besonders fuer Studium, Haushalt, Alltag und persoenliche Routinen geeignet ist.
 
 ## Projektstruktur
 
-- `src/` – React-Frontend
-- `backend/app/` – FastAPI-App, Modelle, Routen und Services
-- `backend/requirements.txt` – Python-Abhängigkeiten
-- `.env.example` – Frontend-Umgebungsvariablen
-- `backend/.env.example` – Backend-Umgebungsvariablen
+```text
+Questify/
+├── src/                     # React-Frontend
+├── backend/
+│   ├── app/                 # FastAPI-App
+│   ├── requirements.txt     # Python-Abhaengigkeiten
+│   └── Dockerfile
+├── docker/
+│   └── nginx/               # Nginx-Konfiguration fuer das Frontend
+├── docker-compose.yml
+├── Dockerfile               # Frontend-Build + Nginx
+├── package.json
+├── .env.example
+└── backend/.env.example
+```
+
+## Funktionsweise
+
+### Frontend
+
+Im Frontend koennen Nutzer neue Quests anlegen, vorhandene Aufgaben anzeigen und abgeschlossene Aufgaben markieren. Zusaetzlich werden dort KI-Funktionen ausgeloest, zum Beispiel:
+
+- Aufgaben nach Kategorie vorschlagen
+- einen Titel besser formulieren
+- XP fuer eine Aufgabe empfehlen
+
+Ausserdem berechnet das Frontend aus allen erledigten Aufgaben den aktuellen Fortschritt, die XP und das naechste Level.
+
+### Backend
+
+Das Backend stellt REST-Endpunkte bereit, verarbeitet Aufgaben und liefert KI-bezogene Antworten zurueck. Beim Start werden Tabellen automatisch angelegt. Wenn die Datenbank noch leer ist, werden Demo-Aufgaben eingefuegt.
+
+### Datenbank
+
+Alle Aufgaben werden dauerhaft in PostgreSQL gespeichert. Dadurch bleiben die Daten auch nach einem Neustart erhalten, anders als bei einer reinen Speicherung im Browser.
 
 ## Voraussetzungen
 
-- Node.js 20+
-- Python 3.9+
+Fuer die lokale Entwicklung brauchst du:
+
+- Node.js 20 oder neuer
+- Python 3.9 oder neuer
 - PostgreSQL
+- optional Docker und Docker Compose
 
-## Backend einrichten
+## Lokale Entwicklung
 
-1. PostgreSQL-Datenbank anlegen, z. B. `questify`
-2. Backend-Umgebungsvariablen anlegen:
-   - `cp backend/.env.example backend/.env`
-3. Falls nötig die Zugangsdaten in `backend/.env` anpassen
-4. Python-Abhängigkeiten installieren:
-   - `npm run install:backend`
-5. Backend starten:
-   - `npm run dev:backend`
+### 1. Repository klonen
 
-Die API läuft dann standardmäßig unter `http://localhost:8000`.
+```bash
+git clone https://github.com/Mooh9876/Questify.git
+cd Questify
+```
 
-## Frontend einrichten
+### 2. Frontend konfigurieren
 
-1. Frontend-Umgebungsvariablen anlegen:
-   - `cp .env.example .env`
-2. Abhängigkeiten installieren:
-   - `npm install`
-3. Frontend starten:
-   - `npm run dev:frontend`
+Erstelle eine `.env` auf Basis der Beispiel-Datei:
 
-Das Frontend läuft dann standardmäßig unter `http://localhost:5173`.
+```bash
+cp .env.example .env
+```
 
-## Wichtige API-Endpunkte
+Standardwert:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+### 3. Backend konfigurieren
+
+Erstelle die Backend-Umgebungsdatei:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Beispielwerte:
+
+```env
+DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/questify
+CORS_ORIGINS=http://localhost:5173
+```
+
+Passe die Werte bei Bedarf an deine lokale PostgreSQL-Instanz an.
+
+### 4. Frontend-Abhaengigkeiten installieren
+
+```bash
+npm install
+```
+
+### 5. Python-Abhaengigkeiten installieren
+
+Im Projekt wird dafuer das vorhandene virtuelle Environment verwendet:
+
+```bash
+npm run install:backend
+```
+
+### 6. Backend starten
+
+```bash
+npm run dev:backend
+```
+
+Das Backend laeuft anschliessend unter:
+
+```text
+http://localhost:8000
+```
+
+### 7. Frontend starten
+
+In einem zweiten Terminal:
+
+```bash
+npm run dev:frontend
+```
+
+Das Frontend laeuft anschliessend unter:
+
+```text
+http://localhost:5173
+```
+
+## Nützliche Skripte
+
+```bash
+npm run dev
+npm run dev:frontend
+npm run dev:backend
+npm run build
+npm run preview
+npm run docker:up
+npm run docker:down
+npm run docker:restart
+```
+
+## Docker-Setup
+
+Mit Docker kannst du Frontend, Backend und Datenbank gemeinsam starten.
+
+### Starten
+
+```bash
+docker compose up --build
+```
+
+Danach sind die Services erreichbar unter:
+
+- Frontend: http://localhost:8080
+- Backend: http://localhost:8000
+- Healthcheck: http://localhost:8000/health
+- PostgreSQL: localhost:5432
+
+### Standarddaten fuer Docker
+
+- Datenbank: `questify`
+- Benutzer: `postgres`
+- Passwort: `postgres`
+
+### Stoppen
+
+```bash
+docker compose down
+```
+
+### Mit Datenloeschung stoppen
+
+```bash
+docker compose down -v
+```
+
+## API-Endpunkte
+
+### Allgemein
 
 - `GET /health`
+
+### Aufgaben
+
 - `GET /api/tasks`
 - `POST /api/tasks`
-- `PATCH /api/tasks/{id}/complete`
+- `PATCH /api/tasks/{task_id}/complete`
+
+### KI-Funktionen
+
 - `POST /api/ai/suggest-tasks`
 - `POST /api/ai/rewrite-task`
 - `POST /api/ai/suggest-xp`
 - `POST /api/ai/motivation`
 
-## Hinweise
+## Beispiel fuer API-Nutzung
 
-- Die Daten kommen jetzt aus dem FastAPI-Backend statt aus `localStorage`.
-- Die KI-Funktionen laufen über API-Endpunkte und nutzen aktuell weiterhin einfache Mock-/Regel-Logik.
-- Beim ersten Start werden Demo-Tasks in die Datenbank geschrieben, wenn noch keine Aufgaben vorhanden sind.
+### Aufgabe erstellen
 
-## Docker starten
+```http
+POST /api/tasks
+Content-Type: application/json
+```
 
-Mit Docker kannst du Frontend, Backend und PostgreSQL zusammen starten:
+```json
+{
+  "title": "30 Minuten Mathe lernen",
+  "description": "Kapitel 2 wiederholen",
+  "xp": 20
+}
+```
 
-- `docker compose up --build`
+### Aufgabe abschliessen
 
-Danach sind die Services erreichbar unter:
+```http
+PATCH /api/tasks/{task_id}/complete
+```
 
-- Frontend: `http://localhost:8080`
-- Backend: `http://localhost:8000`
-- API Healthcheck: `http://localhost:8000/health`
-- PostgreSQL: `localhost:5432`
+### Aufgaben nach Kategorie vorschlagen
 
-Die Standard-Zugangsdaten für PostgreSQL in Docker sind:
+```http
+POST /api/ai/suggest-tasks
+Content-Type: application/json
+```
 
-- Datenbank: `questify`
-- Nutzer: `postgres`
-- Passwort: `postgres`
+```json
+{
+  "category": "Uni"
+}
+```
 
-Zum Stoppen:
+## Anwendungsszenario
 
-- `docker compose down`
+Ein typischer Ablauf in Questify sieht so aus:
 
-Wenn du auch die Datenbankdaten löschen willst:
+1. Eine neue Aufgabe wird erstellt
+2. Die Anwendung weist der Aufgabe XP zu
+3. Die Aufgabe erscheint in der offenen Aufgabenliste
+4. Nach dem Abschliessen werden XP gutgeschrieben
+5. Das Dashboard aktualisiert Level und Fortschrittsanzeige
+6. Optional koennen neue Quest-Ideen oder bessere Formulierungen ueber die KI-Funktionen abgerufen werden
 
-- `docker compose down -v`
+## Besondere Hinweise
+
+- Die Aufgaben werden nicht nur im Browser gespeichert, sondern in PostgreSQL
+- Beim ersten Start koennen Demo-Daten automatisch eingefuegt werden
+- Die KI-Funktionen verwenden aktuell einfache Regel- und Mock-Logik
+- Fuer das Frontend wird im Docker-Setup Nginx verwendet
+- Build-Artefakte wie `dist` oder `node_modules` gehoeren nicht ins Repository
+
+## Moegliche Erweiterungen
+
+- Benutzerkonten und Login
+- persoenliche Profile
+- verschiedene Schwierigkeitsgrade fuer Quests
+- Belohnungssystem mit Achievements
+- echte KI-Integration ueber externe APIs
+- Filter, Suche und Sortierung fuer Aufgaben
+- mobile Optimierung oder App-Version
+
+## Fazit
+
+Questify zeigt, wie eine klassische Aufgabenverwaltung durch Gamification motivierender gestaltet werden kann. Durch die Kombination aus React-Frontend, FastAPI-Backend und PostgreSQL entsteht eine moderne Full-Stack-Anwendung, die sich gut als Hochschulprojekt, Portfolio-Projekt oder Grundlage fuer weitere Erweiterungen eignet.

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -19,6 +20,7 @@ from ..services import (
     motivation_for_task,
     serialize_profile,
     serialize_reward,
+    update_streak,
 )
 
 router = APIRouter(prefix='/tasks', tags=['tasks'])
@@ -40,7 +42,7 @@ def list_tasks(db: Session = Depends(get_db)) -> TaskListResponse:
 
 @router.post('', response_model=TaskRead, status_code=status.HTTP_201_CREATED)
 def create_task(payload: TaskCreate, db: Session = Depends(get_db)) -> TaskRead:
-    task = Task(title=payload.title.strip(), description=payload.description.strip(), xp=payload.xp)
+    task = Task(title=payload.title.strip(), description=payload.description.strip(), xp=payload.xp, category=payload.category)
     db.add(task)
     db.commit()
     db.refresh(task)
@@ -59,8 +61,10 @@ def complete_task(task_id: str, db: Session = Depends(get_db)) -> TaskCompleteRe
 
     profile = get_or_create_profile(db)
     task.completed = True
+    task.completed_at = datetime.now(timezone.utc)
     reward = generate_coin_reward(task.xp)
     apply_reward(profile, reward)
+    streak_result = update_streak(profile)
     db.add(task)
     db.add(profile)
     db.commit()
@@ -69,9 +73,15 @@ def complete_task(task_id: str, db: Session = Depends(get_db)) -> TaskCompleteRe
 
     tasks = db.scalars(select(Task)).all()
     message = motivation_for_task(task, tasks)
+    if streak_result.joker_used:
+        message = f'Ein Joker hat deinen Streak gerettet! 🎭 {message}'
+    if streak_result.streak_milestone:
+        message = f'{profile.streak} Tage Streak! Du hast einen neuen Joker verdient. 🔥 {message}'
     return TaskCompleteResponse(
         task=TaskRead.model_validate(task),
         motivation_message=message,
         reward=serialize_reward(reward),
         profile=UserProfileRead.model_validate(serialize_profile(profile)),
+        joker_used=streak_result.joker_used,
+        streak_milestone=streak_result.streak_milestone,
     )

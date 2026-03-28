@@ -11,6 +11,7 @@ class TaskBase(BaseModel):
     title: str = Field(min_length=1, max_length=120)
     description: str = Field(default='', max_length=500)
     xp: int = Field(ge=5, le=50)
+    category: str | None = Field(default=None, max_length=64)
 
 
 class TaskCreate(TaskBase):
@@ -20,6 +21,7 @@ class TaskCreate(TaskBase):
 class TaskRead(TaskBase):
     id: str
     completed: bool
+    completed_at: datetime | None = None
     created_at: datetime
 
     model_config = {'from_attributes': True}
@@ -39,6 +41,8 @@ class RewardRead(BaseModel):
 class UserProfileRead(BaseModel):
     id: str
     coins: int = Field(ge=0)
+    streak: int = Field(default=0, ge=0)
+    jokers: int = Field(default=0, ge=0)
 
     model_config = {'from_attributes': True}
 
@@ -48,6 +52,8 @@ class TaskCompleteResponse(BaseModel):
     motivation_message: str
     reward: RewardRead
     profile: UserProfileRead
+    joker_used: bool = False
+    streak_milestone: int | None = None
 
 
 class UserProfileResponse(BaseModel):

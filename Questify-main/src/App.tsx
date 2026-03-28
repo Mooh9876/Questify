@@ -1,5 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+// Das ist die Hauptdatei der App – sie baut die gesamte Seite zusammen.
+// Sie kombiniert alle Bausteine (Komponenten) wie Dashboard, Quest-Liste und KI-Bereich.
+// Die eigentliche Logik steckt in den Hooks (useTaskManager, useAiAssistant) – hier wird nur angezeigt.
+
 import { AiSuggestionPanel } from './components/AiSuggestionPanel';
+import { CategoryProgress } from './components/CategoryProgress';
 import { Dashboard } from './components/Dashboard';
 import { ErrorMessage } from './components/ErrorMessage';
 import { Header } from './components/Header';
@@ -8,219 +12,71 @@ import { MotivationMessage } from './components/MotivationMessage';
 import { RewardToast } from './components/RewardToast';
 import { TaskForm } from './components/TaskForm';
 import { TaskList } from './components/TaskList';
-import { buildQuestCompletionFeedback } from './lib/rewards';
-import { calculateProgress, calculateTotalXp, suggestXp } from './lib/xp';
-import {
-  completeTask as completeTaskRequest,
-  createTask as createTaskRequest,
-  fetchProfile,
-  fetchSuggestedXp,
-  fetchTaskSuggestions,
-  fetchTasks,
-  rewriteTask,
-} from './services/api';
-import type { QuestCompletionFeedback, SuggestionCategory, Task, UserProfile } from './types';
+import { useAiAssistant } from './hooks/useAiAssistant';
+import { useTaskManager } from './hooks/useTaskManager';
 
 const App = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [xp, setXp] = useState(10);
-  const [category, setCategory] = useState<SuggestionCategory>('Uni');
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [rewriteInput, setRewriteInput] = useState('');
-  const [rewrittenTask, setRewrittenTask] = useState('');
-  const [motivationMessage, setMotivationMessage] = useState('Bereit für deine nächste Quest?');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [isLoadingTasks, setIsLoadingTasks] = useState(true);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const [isRewriting, setIsRewriting] = useState(false);
-  const [isSuggestingXp, setIsSuggestingXp] = useState(false);
-  const [completionFeedback, setCompletionFeedback] = useState<QuestCompletionFeedback | null>(null);
+  const tasks = useTaskManager();
+  const ai = useAiAssistant();
 
-  const totalXp = useMemo(() => calculateTotalXp(tasks), [tasks]);
-  const progress = useMemo(() => calculateProgress(totalXp), [totalXp]);
-
-  useEffect(() => {
-    const loadTasks = async () => {
-      try {
-        const [loadedTasks, loadedProfile] = await Promise.all([fetchTasks(), fetchProfile()]);
-        setTasks(loadedTasks);
-        setProfile(loadedProfile);
-      } catch (error) {
-        setErrorMessage(error instanceof Error ? error.message : 'Die Aufgaben konnten nicht geladen werden.');
-      } finally {
-        setIsLoadingTasks(false);
-      }
-    };
-
-    void loadTasks();
-  }, []);
-
-  useEffect(() => {
-    if (!completionFeedback) {
-      return undefined;
-    }
-
-    const timeoutId = window.setTimeout(() => setCompletionFeedback(null), 4800);
-    return () => window.clearTimeout(timeoutId);
-  }, [completionFeedback]);
-
-  const resetError = () => setErrorMessage('');
-
-  const handleCreateTask = async () => {
-    resetError();
-
-    if (!title.trim()) {
-      setErrorMessage('Bitte gib einen Aufgabentitel ein.');
-      return;
-    }
-
-    const sanitizedXp = Number.isNaN(xp) ? suggestXp(title, description) : Math.min(50, Math.max(5, xp));
-
-    try {
-      const newTask = await createTaskRequest({
-        title: title.trim(),
-        description: description.trim(),
-        xp: sanitizedXp,
-      });
-
-      setTasks((currentTasks) => [newTask, ...currentTasks]);
-      setTitle('');
-      setDescription('');
-      setXp(10);
-      setMotivationMessage('Neue Quest hinzugefügt. Zeit für frische XP.');
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Die Quest konnte nicht erstellt werden.');
-    }
-  };
-
-  const handleCompleteTask = async (taskId: string) => {
-    resetError();
-
-    const taskToComplete = tasks.find((task) => task.id === taskId);
-
-    if (!taskToComplete) {
-      setErrorMessage('Diese Aufgabe wurde nicht gefunden.');
-      return;
-    }
-
-    if (taskToComplete.completed) {
-      setErrorMessage('Diese Aufgabe wurde bereits abgeschlossen.');
-      return;
-    }
-
-    try {
-      const response = await completeTaskRequest(taskId);
-      setTasks((currentTasks) =>
-        currentTasks.map((task) => (task.id === taskId ? response.task : task)),
-      );
-      setProfile(response.profile);
-      setCompletionFeedback(buildQuestCompletionFeedback(taskToComplete.title, taskToComplete.xp, response.reward));
-      setMotivationMessage(response.motivationMessage);
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Die Aufgabe konnte nicht abgeschlossen werden.');
-    }
-  };
-
-  const handleLoadSuggestions = async () => {
-    resetError();
-    setIsLoadingSuggestions(true);
-
-    try {
-      const nextSuggestions = await fetchTaskSuggestions(category);
-      setSuggestions(nextSuggestions);
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Die KI-Vorschläge konnten gerade nicht geladen werden.');
-    } finally {
-      setIsLoadingSuggestions(false);
-    }
-  };
-
-  const handleRewrite = async () => {
-    resetError();
-    setIsRewriting(true);
-
-    try {
-      const improvedTask = await rewriteTask(rewriteInput);
-      setRewrittenTask(improvedTask);
-      if (!title.trim()) {
-        setTitle(improvedTask);
-      }
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Die Aufgabe konnte nicht verbessert werden.');
-    } finally {
-      setIsRewriting(false);
-    }
-  };
-
-  const handleSuggestXp = async () => {
-    resetError();
-    setIsSuggestingXp(true);
-
-    try {
-      const aiSuggestedXp = await fetchSuggestedXp(title || description);
-      setXp(aiSuggestedXp);
-    } catch {
-      setXp(suggestXp(title, description));
-      setErrorMessage('Die XP-Empfehlung nutzt gerade den lokalen Fallback.');
-    } finally {
-      setIsSuggestingXp(false);
-    }
-  };
+  const errorMessage = tasks.errorMessage || ai.errorMessage;
 
   return (
-    <div className="app-shell">
-      <div className="app-container">
+    <div className="min-h-screen">
+      <div className="max-w-3xl mx-auto px-4 pb-16">
         <Header subtitle="Füge schnell eine Quest hinzu, erledige sie und sieh sofort deinen Fortschritt." />
 
-        <section className="stack-section">
+        <section className="flex flex-col gap-4 mb-4">
           <Dashboard
-            level={progress.level}
-            totalXp={progress.totalXp}
-            currentLevelXp={progress.currentLevelXp}
-            xpToNextLevel={progress.xpToNextLevel}
-            progressPercentage={progress.progressPercentage}
-            coins={profile?.coins ?? 0}
+            level={tasks.progress.level}
+            totalXp={tasks.progress.totalXp}
+            currentLevelXp={tasks.progress.currentLevelXp}
+            xpToNextLevel={tasks.progress.xpToNextLevel}
+            progressPercentage={tasks.progress.progressPercentage}
+            coins={tasks.profile?.coins ?? 0}
+            streak={tasks.profile?.streak ?? 0}
+            jokers={tasks.profile?.jokers ?? 0}
           />
-          <RewardToast feedback={completionFeedback} onDismiss={() => setCompletionFeedback(null)} />
+          <CategoryProgress tasks={tasks.tasks} />
+          <RewardToast feedback={tasks.completionFeedback} onDismiss={() => tasks.setCompletionFeedback(null)} />
         </section>
 
-        <section className="stack-section primary-focus-section">
+        <section className="flex flex-col gap-4 mb-4">
           <TaskForm
-            title={title}
-            description={description}
-            xp={xp}
-            onTitleChange={setTitle}
-            onDescriptionChange={setDescription}
-            onXpChange={setXp}
-            onSubmit={handleCreateTask}
-            onSuggestXp={handleSuggestXp}
-            isSuggestingXp={isSuggestingXp}
+            title={tasks.title}
+            description={tasks.description}
+            xp={tasks.xp}
+            taskCategory={tasks.taskCategory}
+            onTitleChange={tasks.setTitle}
+            onDescriptionChange={tasks.setDescription}
+            onXpChange={tasks.setXp}
+            onTaskCategoryChange={tasks.setTaskCategory}
+            onSubmit={tasks.handleCreateTask}
+            onSuggestXp={tasks.handleSuggestXp}
+            isSuggestingXp={tasks.isSuggestingXp}
           />
         </section>
 
-        <section className="stack-section">
-          <MotivationMessage message={motivationMessage} />
+        <section className="flex flex-col gap-4 mb-4">
+          <MotivationMessage message={tasks.motivationMessage} />
           <ErrorMessage message={errorMessage} />
-          {isLoadingTasks ? <LoadingIndicator label="Quests werden vom Server geladen…" /> : null}
-          <TaskList tasks={tasks} onComplete={handleCompleteTask} />
+          {tasks.isLoadingTasks ? <LoadingIndicator label="Quests werden vom Server geladen…" /> : null}
+          <TaskList tasks={tasks.tasks} onComplete={tasks.handleCompleteTask} />
         </section>
 
-        <section className="stack-section secondary-section">
-          {isLoadingSuggestions ? <LoadingIndicator label="KI durchsucht passende Quest-Ideen…" /> : null}
+        <section className="flex flex-col gap-4 mb-4">
+          {ai.isLoadingSuggestions ? <LoadingIndicator label="KI durchsucht passende Quest-Ideen…" /> : null}
           <AiSuggestionPanel
-            category={category}
-            suggestions={suggestions}
-            rewriteInput={rewriteInput}
-            rewrittenTask={rewrittenTask}
-            onCategoryChange={setCategory}
-            onLoadSuggestions={handleLoadSuggestions}
-            onRewriteInputChange={setRewriteInput}
-            onRewrite={handleRewrite}
-            isLoadingSuggestions={isLoadingSuggestions}
-            isRewriting={isRewriting}
+            category={ai.category}
+            suggestions={ai.suggestions}
+            rewriteInput={ai.rewriteInput}
+            rewrittenTask={ai.rewrittenTask}
+            onCategoryChange={ai.setCategory}
+            onLoadSuggestions={ai.handleLoadSuggestions}
+            onRewriteInputChange={ai.setRewriteInput}
+            onRewrite={() => ai.handleRewrite((result) => { if (!tasks.title.trim()) tasks.setTitle(result); })}
+            isLoadingSuggestions={ai.isLoadingSuggestions}
+            isRewriting={ai.isRewriting}
           />
         </section>
       </div>

@@ -1,3 +1,7 @@
+// Diese Datei ist die Verbindung zwischen der App und dem Server (Backend).
+// Hier stehen alle Funktionen, die Daten laden, speichern oder verändern.
+// Wenn der Server antwortet, übersetzt diese Datei die Daten in das App-Format.
+
 import type { LootReward, SuggestionCategory, Task, UserProfile } from '../types';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api').replace(/\/$/, '');
@@ -8,6 +12,8 @@ type ApiTask = {
   description: string;
   xp: number;
   completed: boolean;
+  completed_at: string | null;
+  category: string | null;
   created_at: string;
 };
 
@@ -21,6 +27,8 @@ type ApiReward = {
 type ApiProfile = {
   id: string;
   coins: number;
+  streak: number;
+  jokers: number;
 };
 
 const mapTask = (task: ApiTask): Task => ({
@@ -29,6 +37,8 @@ const mapTask = (task: ApiTask): Task => ({
   description: task.description,
   xp: task.xp,
   completed: task.completed,
+  completedAt: task.completed_at ?? undefined,
+  category: (task.category as Task['category']) ?? undefined,
   createdAt: task.created_at,
 });
 
@@ -42,6 +52,8 @@ const mapReward = (reward: ApiReward): LootReward => ({
 const mapProfile = (profile: ApiProfile): UserProfile => ({
   id: profile.id,
   coins: profile.coins,
+  streak: profile.streak,
+  jokers: profile.jokers,
 });
 
 const request = async <T>(path: string, options?: RequestInit): Promise<T> => {
@@ -71,7 +83,7 @@ export const fetchProfile = async (): Promise<UserProfile> => {
   return mapProfile(response.profile);
 };
 
-export const createTask = async (payload: { title: string; description: string; xp: number }): Promise<Task> => {
+export const createTask = async (payload: { title: string; description: string; xp: number; category?: string }): Promise<Task> => {
   const response = await request<ApiTask>('/tasks', {
     method: 'POST',
     body: JSON.stringify(payload),
@@ -81,8 +93,8 @@ export const createTask = async (payload: { title: string; description: string; 
 
 export const completeTask = async (
   taskId: string,
-): Promise<{ task: Task; motivationMessage: string; reward: LootReward; profile: UserProfile }> => {
-  const response = await request<{ task: ApiTask; motivation_message: string; reward: ApiReward; profile: ApiProfile }>(`/tasks/${taskId}/complete`, {
+): Promise<{ task: Task; motivationMessage: string; reward: LootReward; profile: UserProfile; jokerUsed: boolean; streakMilestone: number | null }> => {
+  const response = await request<{ task: ApiTask; motivation_message: string; reward: ApiReward; profile: ApiProfile; joker_used: boolean; streak_milestone: number | null }>(`/tasks/${taskId}/complete`, {
     method: 'PATCH',
   });
   return {
@@ -90,6 +102,8 @@ export const completeTask = async (
     motivationMessage: response.motivation_message,
     reward: mapReward(response.reward),
     profile: mapProfile(response.profile),
+    jokerUsed: response.joker_used,
+    streakMilestone: response.streak_milestone,
   };
 };
 

@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-COPY tsconfig.json tsconfig.app.json vite.config.ts index.html ./
+COPY tsconfig.json tsconfig.app.json vite.config.ts index.html postcss.config.js tailwind.config.js ./
 COPY src ./src
 ARG VITE_API_BASE_URL=/api
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}

@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from .config import get_settings
 from .database import Base, SessionLocal, engine
@@ -12,9 +13,21 @@ from .seed import seed_tasks
 settings = get_settings()
 
 
+def _run_migrations() -> None:
+    """Add new columns to existing tables without dropping data."""
+    with engine.connect() as conn:
+        conn.execute(text('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ'))
+        conn.execute(text('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS category VARCHAR(64)'))
+        conn.execute(text('ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS streak INTEGER NOT NULL DEFAULT 0'))
+        conn.execute(text('ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS last_activity_date DATE'))
+        conn.execute(text('ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS jokers INTEGER NOT NULL DEFAULT 0'))
+        conn.commit()
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     Base.metadata.create_all(bind=engine)
+    _run_migrations()
     with SessionLocal() as db:
         seed_tasks(db)
     yield

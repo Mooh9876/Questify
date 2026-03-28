@@ -17,11 +17,13 @@ Questify verbindet Produktivitaet mit einem spielerischen Ansatz. Statt einer kl
 - Aufgaben als Quests anlegen
 - Aufgaben als erledigt markieren
 - XP fuer abgeschlossene Aufgaben sammeln
+- Coins fuer abgeschlossene Aufgaben sammeln
 - Level-Fortschritt live im Dashboard sehen
 - KI-gestuetzte Aufgabenvorschlaege nach Kategorien
 - Aufgabenformulierung verbessern lassen
 - XP-Vorschlaege fuer neue Aufgaben erhalten
 - Motivierende Rueckmeldungen nach abgeschlossenen Quests
+- Eigenes Profil mit Coin-Stand
 - Persistente Speicherung in PostgreSQL
 - Start ueber lokale Entwicklung oder Docker
 
@@ -83,6 +85,7 @@ Im Frontend koennen Nutzer neue Quests anlegen, vorhandene Aufgaben anzeigen und
 - XP fuer eine Aufgabe empfehlen
 
 Ausserdem berechnet das Frontend aus allen erledigten Aufgaben den aktuellen Fortschritt, die XP und das naechste Level.
+Nach dem Abschliessen einer Quest wird zusaetzlich der aktuelle Coin-Stand geladen und im Dashboard angezeigt.
 
 ### Backend
 
@@ -240,6 +243,7 @@ docker compose down -v
 ### Aufgaben
 
 - `GET /api/tasks`
+- `GET /api/tasks/profile`
 - `POST /api/tasks`
 - `PATCH /api/tasks/{task_id}/complete`
 
@@ -248,7 +252,6 @@ docker compose down -v
 - `POST /api/ai/suggest-tasks`
 - `POST /api/ai/rewrite-task`
 - `POST /api/ai/suggest-xp`
-- `POST /api/ai/motivation`
 
 ## Beispiel fuer API-Nutzung
 
@@ -293,15 +296,15 @@ Ein typischer Ablauf in Questify sieht so aus:
 1. Eine neue Aufgabe wird erstellt
 2. Die Anwendung weist der Aufgabe XP zu
 3. Die Aufgabe erscheint in der offenen Aufgabenliste
-4. Nach dem Abschliessen werden XP gutgeschrieben
-5. Das Dashboard aktualisiert Level und Fortschrittsanzeige
+4. Nach dem Abschliessen werden XP und Coins gutgeschrieben
+5. Das Dashboard aktualisiert Level, Fortschritt und Coin-Stand
 6. Optional koennen neue Quest-Ideen oder bessere Formulierungen ueber die KI-Funktionen abgerufen werden
 
 ## Besondere Hinweise
 
 - Die Aufgaben werden nicht nur im Browser gespeichert, sondern in PostgreSQL
 - Beim ersten Start koennen Demo-Daten automatisch eingefuegt werden
-- Die KI-Funktionen verwenden aktuell einfache Regel- und Mock-Logik
+- Die KI-Funktionen verwenden aktuell einfache Regel-Logik
 - Fuer das Frontend wird im Docker-Setup Nginx verwendet
 - Build-Artefakte wie `dist` oder `node_modules` gehoeren nicht ins Repository
 

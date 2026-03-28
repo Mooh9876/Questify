@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import inspect, text
 
 from .config import get_settings
 from .database import Base, SessionLocal, engine
@@ -13,23 +12,9 @@ from .seed import seed_tasks
 settings = get_settings()
 
 
-def ensure_profile_schema() -> None:
-    inspector = inspect(engine)
-
-    if 'user_profiles' not in inspector.get_table_names():
-        return
-
-    existing_columns = {column['name'] for column in inspector.get_columns('user_profiles')}
-
-    with engine.begin() as connection:
-        if 'rewards' not in existing_columns:
-            connection.execute(text("ALTER TABLE user_profiles ADD COLUMN rewards JSON NOT NULL DEFAULT '[]'"))
-
-
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     Base.metadata.create_all(bind=engine)
-    ensure_profile_schema()
     with SessionLocal() as db:
         seed_tasks(db)
     yield

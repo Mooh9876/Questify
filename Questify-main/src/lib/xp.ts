@@ -19,11 +19,6 @@ export const calculateProgress = (totalXp: number): UserProgress => {
 export const calculateTotalXp = (tasks: Task[]): number =>
   tasks.filter((task) => task.completed).reduce((sum, task) => sum + task.xp, 0);
 
-export const getTaskCounts = (tasks: Task[]) => ({
-  completed: tasks.filter((task) => task.completed).length,
-  open: tasks.filter((task) => !task.completed).length,
-});
-
 export const suggestXp = (title: string, description: string): number => {
   const combinedText = `${title} ${description}`.toLowerCase();
 

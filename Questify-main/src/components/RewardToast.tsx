@@ -18,11 +18,9 @@ export const RewardToast = ({ feedback, onDismiss }: RewardToastProps) => {
         <h3>{feedback.taskTitle}</h3>
         <div className="reward-feedback-list">
           <span className="reward-feedback-chip xp-chip">+{feedback.xpGained} XP</span>
-          {feedback.reward.type === 'coins' ? (
-            <span className={`reward-feedback-chip reward-chip reward-${feedback.reward.type}`}>
-              {getRewardAccentLabel(feedback.reward)}
-            </span>
-          ) : null}
+          <span className={`reward-feedback-chip reward-chip reward-${feedback.reward.type}`}>
+            {getRewardAccentLabel(feedback.reward)}
+          </span>
         </div>
         <p>{feedback.reward.description}</p>
       </div>

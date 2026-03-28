@@ -10,10 +10,4 @@ export const buildQuestCompletionFeedback = (
   reward,
 });
 
-export const getRewardAccentLabel = (reward: LootReward): string => {
-  if (reward.type === 'coins') {
-    return `+${reward.coins} Coins`;
-  }
-
-  return 'Kein Extra-Loot';
-};
+export const getRewardAccentLabel = (reward: LootReward): string => `+${reward.coins} Coins`;

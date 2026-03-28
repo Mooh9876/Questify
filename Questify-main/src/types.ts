@@ -7,7 +7,7 @@ export type Task = {
   createdAt: string;
 };
 
-export type RewardType = 'none' | 'coins';
+export type RewardType = 'coins';
 
 export type LootReward = {
   type: RewardType;

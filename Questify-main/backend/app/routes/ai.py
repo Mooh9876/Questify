@@ -1,8 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 
 from ..schemas import (
-    MotivationRequest,
-    MotivationResponse,
     RewriteTaskRequest,
     RewriteTaskResponse,
     SuggestTasksRequest,
@@ -10,7 +8,7 @@ from ..schemas import (
     SuggestXpRequest,
     SuggestXpResponse,
 )
-from ..services import MOTIVATION_MESSAGES, SUGGESTION_MAP, rewrite_task_title, suggest_xp
+from ..services import SUGGESTION_MAP, rewrite_task_title, suggest_xp
 
 router = APIRouter(prefix='/ai', tags=['ai'])
 
@@ -22,15 +20,11 @@ def suggest_tasks(payload: SuggestTasksRequest) -> SuggestTasksResponse:
 
 @router.post('/rewrite-task', response_model=RewriteTaskResponse)
 def rewrite_task(payload: RewriteTaskRequest) -> RewriteTaskResponse:
+    if not payload.input.strip():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Bitte gib zuerst eine Aufgabe ein.')
     return RewriteTaskResponse(rewritten=rewrite_task_title(payload.input))
 
 
 @router.post('/suggest-xp', response_model=SuggestXpResponse)
 def suggest_xp_value(payload: SuggestXpRequest) -> SuggestXpResponse:
     return SuggestXpResponse(xp=suggest_xp(payload.title))
-
-
-@router.post('/motivation', response_model=MotivationResponse)
-def motivation(payload: MotivationRequest) -> MotivationResponse:
-    base_message = MOTIVATION_MESSAGES[(payload.level + payload.xp) % len(MOTIVATION_MESSAGES)]
-    return MotivationResponse(message=f'{base_message} Level {payload.level} wartet schon auf dich.')

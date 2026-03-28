@@ -76,13 +76,3 @@ class SuggestXpRequest(BaseModel):
 
 class SuggestXpResponse(BaseModel):
     xp: int
-
-
-class MotivationRequest(BaseModel):
-    title: str = Field(min_length=1, max_length=120)
-    xp: int = Field(ge=5, le=50)
-    level: int = Field(ge=1)
-
-
-class MotivationResponse(BaseModel):
-    message: str

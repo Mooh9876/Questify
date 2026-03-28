@@ -99,6 +99,10 @@ def apply_reward(profile: UserProfile, reward: GeneratedReward) -> UserProfile:
 
 def rewrite_task_title(input_text: str) -> str:
     trimmed = input_text.strip()
+
+    if not trimmed:
+        raise ValueError('Bitte gib zuerst eine Aufgabe ein.')
+
     lowered = trimmed.lower()
 
     if 'mathe lernen' in lowered:

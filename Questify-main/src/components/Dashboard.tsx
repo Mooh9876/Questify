@@ -6,6 +6,7 @@ type DashboardProps = {
   currentLevelXp: number;
   xpToNextLevel: number;
   progressPercentage: number;
+  coins: number;
 };
 
 export const Dashboard = ({
@@ -14,6 +15,7 @@ export const Dashboard = ({
   currentLevelXp,
   xpToNextLevel,
   progressPercentage,
+  coins,
 }: DashboardProps) => (
   <section className="panel dashboard-panel">
     <div className="dashboard-layout">
@@ -33,6 +35,13 @@ export const Dashboard = ({
         <p className="dashboard-caption">
           {currentLevelXp} / 100 XP im aktuellen Level · Noch {xpToNextLevel} XP bis zum nächsten Level
         </p>
+
+        <div className="dashboard-stats" aria-label="Questify Coin-Uebersicht">
+          <div className="dashboard-stat-card">
+            <span className="dashboard-stat-label">Coins</span>
+            <strong>{coins}</strong>
+          </div>
+        </div>
       </div>
 
       <CharacterPreview level={level} />

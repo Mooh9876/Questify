@@ -5,21 +5,25 @@ import { ErrorMessage } from './components/ErrorMessage';
 import { Header } from './components/Header';
 import { LoadingIndicator } from './components/LoadingIndicator';
 import { MotivationMessage } from './components/MotivationMessage';
+import { RewardToast } from './components/RewardToast';
 import { TaskForm } from './components/TaskForm';
 import { TaskList } from './components/TaskList';
+import { buildQuestCompletionFeedback } from './lib/rewards';
 import { calculateProgress, calculateTotalXp, suggestXp } from './lib/xp';
 import {
   completeTask as completeTaskRequest,
   createTask as createTaskRequest,
+  fetchProfile,
   fetchSuggestedXp,
   fetchTaskSuggestions,
   fetchTasks,
   rewriteTask,
 } from './services/api';
-import type { SuggestionCategory, Task } from './types';
+import type { QuestCompletionFeedback, SuggestionCategory, Task, UserProfile } from './types';
 
 const App = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [xp, setXp] = useState(10);
@@ -33,6 +37,7 @@ const App = () => {
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [isRewriting, setIsRewriting] = useState(false);
   const [isSuggestingXp, setIsSuggestingXp] = useState(false);
+  const [completionFeedback, setCompletionFeedback] = useState<QuestCompletionFeedback | null>(null);
 
   const totalXp = useMemo(() => calculateTotalXp(tasks), [tasks]);
   const progress = useMemo(() => calculateProgress(totalXp), [totalXp]);
@@ -40,8 +45,9 @@ const App = () => {
   useEffect(() => {
     const loadTasks = async () => {
       try {
-        const loadedTasks = await fetchTasks();
+        const [loadedTasks, loadedProfile] = await Promise.all([fetchTasks(), fetchProfile()]);
         setTasks(loadedTasks);
+        setProfile(loadedProfile);
       } catch (error) {
         setErrorMessage(error instanceof Error ? error.message : 'Die Aufgaben konnten nicht geladen werden.');
       } finally {
@@ -51,6 +57,15 @@ const App = () => {
 
     void loadTasks();
   }, []);
+
+  useEffect(() => {
+    if (!completionFeedback) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => setCompletionFeedback(null), 4800);
+    return () => window.clearTimeout(timeoutId);
+  }, [completionFeedback]);
 
   const resetError = () => setErrorMessage('');
 
@@ -101,6 +116,8 @@ const App = () => {
       setTasks((currentTasks) =>
         currentTasks.map((task) => (task.id === taskId ? response.task : task)),
       );
+      setProfile(response.profile);
+      setCompletionFeedback(buildQuestCompletionFeedback(taskToComplete.title, taskToComplete.xp, response.reward));
       setMotivationMessage(response.motivationMessage);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Die Aufgabe konnte nicht abgeschlossen werden.');
@@ -165,7 +182,9 @@ const App = () => {
             currentLevelXp={progress.currentLevelXp}
             xpToNextLevel={progress.xpToNextLevel}
             progressPercentage={progress.progressPercentage}
+            coins={profile?.coins ?? 0}
           />
+          <RewardToast feedback={completionFeedback} onDismiss={() => setCompletionFeedback(null)} />
         </section>
 
         <section className="stack-section primary-focus-section">

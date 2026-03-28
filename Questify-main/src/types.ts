@@ -7,6 +7,26 @@ export type Task = {
   createdAt: string;
 };
 
+export type RewardType = 'none' | 'coins';
+
+export type LootReward = {
+  type: RewardType;
+  title: string;
+  description: string;
+  coins: number;
+};
+
+export type UserProfile = {
+  id: string;
+  coins: number;
+};
+
+export type QuestCompletionFeedback = {
+  taskTitle: string;
+  xpGained: number;
+  reward: LootReward;
+};
+
 export type UserProgress = {
   totalXp: number;
   level: number;
